@@ -1,0 +1,39 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Tam Dang's Implementation of BackboneTutorials.com Beginner Video</title>
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.1.1/css/bootstrap.min.css">
+</head>
+<body>
+  <div class="container">
+    <h1>User Manager</h1>
+    <hr />
+    <div class="page"></div>
+  </div>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/backbone.js/1.1.2/backbone-min.js"></script>
+  <!-- Backbone.js dependencies: jQuery, underscore -->
+
+  <script>
+
+    // create Router class. takes an object called 'routes'
+    var Router = Backbone.Router.extend({
+      routes: {
+        '' : 'home' // empty string denotes index route, triggers route called 'home'
+      }
+    });
+
+    // create instance of Router
+    var router = new Router();
+
+    // here, our instance listens for routes. Backbone.Router class emits event called 'route'
+    // jQuery lets us hook into it
+    router.on('route:home', function(){
+      console.log("We have loaded the home page!")
+    });
+
+  </script>
+</body>
+</html>
