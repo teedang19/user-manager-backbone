@@ -13,7 +13,52 @@
   </div>
   
   <script type="text/template" id="user-list-template">
+    <a href="#/new" class="btn btn-primary">New User</a>
+    <hr />
+    <table class="table striped">
+      <thead>
+        <tr>
+          <th>First Name</th>
+          <th>Last Name</th>
+          <th>Age</th>
+        </tr>
+      </thead>
+      <tbody>
+      <!-- // underscore method -->
+        <% _.each(users, function(user){ %>
+          <tr>
+            <td><%= user.get('firstname')%></td> <!-- // backbone's way of getting & setting attrs -->
+            <td><%= user.get('lastname')%></td>
+            <td><%= user.get('age')%></td>
+            <td><a href="#/edit/<%= user.id%>" class="btn">Edit</a></td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
 
+  </script>
+
+  <script type="text/template" id="edit-user-template">
+    <form class="edit-user-form">
+      <legend><%= user ? 'Update' : 'Create'%> User</legend>
+
+      <label>First Name</label>
+      <input type="text" name="firstname" value="<%= user ? user.get('firstname') : '' %>"/>
+
+      <label>Last Name</label>
+      <input type="text" name="lastname" value="<%= user ? user.get('lastname') : '' %>"/>
+
+      <label>Age</label>
+      <input type="text" name="age" value="<%= user ? user.get('age') : '' %>"/>
+
+      <hr />
+      <button type="submit" class="btn"><%= user ? 'Update' : 'Create'%></button>
+      
+      <% if(user) {%>
+        <input type="hidden" name="id" value="<%= user.id %>">
+        <button class="btn btn-danger delete">Delete</button>
+      <% }; %>
+    </form>
   </script>
 
   <script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
@@ -27,9 +72,34 @@
       options.url = 'http://backbonejs-beginner.herokuapp.com' + options.url;
     });
 
+    $.fn.serializeObject = function() {
+      var o = {};
+      var a = this.serializeArray();
+      $.each(a, function() {
+          if (o[this.name] !== undefined) {
+              if (!o[this.name].push) {
+                  o[this.name] = [o[this.name]];
+              }
+              o[this.name].push(this.value || '');
+          } else {
+              o[this.name] = this.value || '';
+          }
+      });
+      return o;
+    };
+
+    // collection (array) of User models
     var Users = Backbone.Collection.extend({
       url: "/users"
     });
+
+    // single Model
+    // diff syntax for url (urlRoot)
+    // Backbone knows how to append ids for various request methods. ie, for PUT & DELETE, it appends ids; for POST, bc there is no ID, sends it to base urlRoot.
+    var User = Backbone.Model.extend({
+      urlRoot: "/users"
+    });
+
     // create a UserList Backbone View class
 
     // each View is assigned an element (el): the container for the view. anything that happens inside the view (actions, rendering) should happen inside the children of the element. the view should never outreach it's own element. Can work on as many children as you like inside the view; sometimes, may want to split up the children and give them their own View
@@ -45,19 +115,67 @@
         users.fetch({
           success: function(users) {
             var template = _.template($('#user-list-template').html(), {users: users.models});
+            // whatever is passed in to the template is available in the template as a first-level variable; here, it is the users collection
             that.$el.html(template);
           }
         })
       }
     });
 
+    var EditUser = Backbone.View.extend({
+      el: '.page',
+      render: function(options){
+        var that = this;
+
+        if (options.id) {
+          var user = new User({id: options.id});
+          // GET /users/:id
+          user.fetch({
+            success: function(user){
+              var template = _.template($('#edit-user-template').html(), {user: user});
+              that.$el.html(template);
+            }
+          })
+        } else {
+          var template = _.template($('#edit-user-template').html(), {user: null});
+          this.$el.html(template);
+        }
+      },
+      // Views allow for events hash: listen for events
+      events: {
+        'submit .edit-user-form': 'saveUser'
+        // 'click button': 'doaction'
+        // first word is event, second word is element
+      },
+      saveUser: function(event) {
+        var userDetails = $(event.currentTarget).serializeObject();
+        var user = new User();
+        // first param of save function: the values to be saved to server.
+        // second param: options hash; one option is success function.
+        // when an id is returned from the server, Backbone.js automatically adds it to the model! that shit's cray.
+        user.save(userDetails, {
+          success: function(user){
+            // navigate() is used for saving state of your page - if you want the back and forward buttons to work, you want to update URLS as you go.
+            // navigate() is silent by default, so it will not trigger any of the routes -- will only update URL. to trigger the routes, we tell it to explicitly trigger.
+            // here we navigate back to homepage
+            router.navigate('', {trigger: true});
+          }
+        });
+        // by default, form submission refreshes page - return false will stop executing the native behavior - the form will submit and not do anything else!
+        return false;
+      }
+    });
+
     // create an instance of UserList class
     var userList = new UserList();
+    var editUser = new EditUser();
 
     // create Router class. takes an object called 'routes'
     var Router = Backbone.Router.extend({
       routes: {
-        '': 'home' // empty string denotes index route, triggers route called 'home'
+        '': 'home', // empty string denotes index route, triggers route called 'home'
+        'new': 'editUser',
+        'edit/:id': 'editUser'
       }
     });
 
@@ -68,6 +186,9 @@
     // jQuery lets us hook into it
     router.on('route:home', function() {
       userList.render();
+    });
+    router.on('route:editUser', function(id){
+      editUser.render({id: id});
     });
 
     Backbone.history.start();
