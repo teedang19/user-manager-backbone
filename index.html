@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <title>Tam Dang's Implementation of BackboneTutorials.com Beginner Video</title>
-  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.1.1/css/bootstrap.min.css">
+  <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.1.1/css/bootstrap.min.css">
 </head>
 <body>
   <div class="container">
@@ -11,17 +11,53 @@
     <hr />
     <div class="page"></div>
   </div>
-  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-  <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js"></script>
-  <script src="//cdnjs.cloudflare.com/ajax/libs/backbone.js/1.1.2/backbone-min.js"></script>
+  
+  <script type="text/template" id="user-list-template">
+
+  </script>
+
+  <script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+  <script src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js"></script>
+  <script src="http://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.1.2/backbone-min.js"></script>
   <!-- Backbone.js dependencies: jQuery, underscore -->
 
   <script>
 
+    $.ajaxPrefilter( function( options, originalOptions, jqXHR ) {
+      options.url = 'http://backbonejs-beginner.herokuapp.com' + options.url;
+    });
+
+    var Users = Backbone.Collection.extend({
+      url: "/users"
+    });
+    // create a UserList Backbone View class
+
+    // each View is assigned an element (el): the container for the view. anything that happens inside the view (actions, rendering) should happen inside the children of the element. the view should never outreach it's own element. Can work on as many children as you like inside the view; sometimes, may want to split up the children and give them their own View
+
+    // each View has render function: responsible for loading & compiling a template and inserting into DOM.
+    // this.$el is a backbone.js "cheat" to reference cased element.
+
+    var UserList = Backbone.View.extend({
+      el: '.page', // div class we already have
+      render: function() {
+        var that = this; // saving the scope of "this" so we can use it in the success callback of users.fetch
+        var users = new Users();
+        users.fetch({
+          success: function(users) {
+            var template = _.template($('#user-list-template').html(), {users: users.models});
+            that.$el.html(template);
+          }
+        })
+      }
+    });
+
+    // create an instance of UserList class
+    var userList = new UserList();
+
     // create Router class. takes an object called 'routes'
     var Router = Backbone.Router.extend({
       routes: {
-        '' : 'home' // empty string denotes index route, triggers route called 'home'
+        '': 'home' // empty string denotes index route, triggers route called 'home'
       }
     });
 
@@ -30,10 +66,12 @@
 
     // here, our instance listens for routes. Backbone.Router class emits event called 'route'
     // jQuery lets us hook into it
-    router.on('route:home', function(){
-      console.log("We have loaded the home page!")
+    router.on('route:home', function() {
+      userList.render();
     });
 
-  </script>
+    Backbone.history.start();
+
+  // </script>
 </body>
 </html>

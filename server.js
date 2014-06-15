@@ -13,7 +13,13 @@ if (process.env.REDISTOGO_URL) {
   var redis = require("redis").createClient();
 }
 
-nohm.setClient(redis);
+// what was in original file:
+// nohm.setClient(redis);
+
+redis.on("connect", function() {
+  nohm.setClient(redis);
+  console.log("Nohm Connected to Redis Client");
+});
 
 var port = process.env.PORT || 3000;
 
@@ -99,7 +105,6 @@ app.get('/users/:id', userDetails);
 app.del('/users/:id', deleteUser);
 app.post('/users', createUser);
 app.put('/users/:id', updateUser);
-
 app.listen(port);
 
 
