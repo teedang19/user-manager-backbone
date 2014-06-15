@@ -56,7 +56,7 @@
       
       <% if(user) {%>
         <input type="hidden" name="id" value="<%= user.id %>">
-        <button class="btn btn-danger delete">Delete</button>
+        <button type="button" class="btn btn-danger delete">Delete</button>
       <% }; %>
     </form>
   </script>
@@ -126,11 +126,11 @@
       el: '.page',
       render: function(options){
         var that = this;
-
         if (options.id) {
-          var user = new User({id: options.id});
+          // we literally attach an instance of user to our view, whose structure/self is encapsulated by our var that on line 128.
+          that.user = new User({id: options.id});
           // GET /users/:id
-          user.fetch({
+          that.user.fetch({
             success: function(user){
               var template = _.template($('#edit-user-template').html(), {user: user});
               that.$el.html(template);
@@ -143,9 +143,10 @@
       },
       // Views allow for events hash: listen for events
       events: {
-        'submit .edit-user-form': 'saveUser'
+        'submit .edit-user-form': 'saveUser',
         // 'click button': 'doaction'
         // first word is event, second word is element
+        'click .delete': 'deleteUser'
       },
       saveUser: function(event) {
         var userDetails = $(event.currentTarget).serializeObject();
@@ -161,7 +162,17 @@
             router.navigate('', {trigger: true});
           }
         });
+
         // by default, form submission refreshes page - return false will stop executing the native behavior - the form will submit and not do anything else!
+        return false;
+      },
+
+      deleteUser: function(event) {
+        this.user.destroy({
+          success: function(){
+            router.navigate('', {trigger: true});
+          }
+        })
         return false;
       }
     });
